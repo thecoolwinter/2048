@@ -10,6 +10,13 @@
 /// Col  |  0  | 1  | 2  | 3  | 0  | 1  | 2  | 3  | 0  | 1  | 2  | 3  | 0  | 1  | 2  | 3  |
 /// Bits | 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000
 /// ```
+///
+/// This representation is not unique, and was first seen in Robert Xiao's 2048 AI.
+/// - https://github.com/nneonneo/2048-ai/tree/master
+/// - https://stackoverflow.com/questions/22342854/what-is-the-optimal-algorithm-for-the-game-2048/22498940#22498940
+///
+/// However the implementation differs in multiple ways, including not treating rows and columns and individual entities
+/// for heuristics. As well as several novel methods for extracting information quickly from the board representation.
 struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
     init() {
         self.board = 0
@@ -65,6 +72,7 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         }
     }
 
+    @inlinable
     subscript(row: Int, col: Int) -> Int {
         get {
             Int(get(row: UInt(row), col: UInt(col)))
@@ -76,7 +84,8 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
 
     // MARK: - Rotate
 
-    @inlinable
+    /// Rotates the board clockwise.
+    /// - Returns: The new, rotated board.
     func rotateClockwise() -> Board {
         var result = Board(0, score: score)
         var board = self.board
@@ -91,7 +100,8 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         return result
     }
 
-    @inlinable
+    /// Rotates the board counter-clockwise.
+    /// - Returns: The new, rotated board.
     func rotateCounterClockwise() -> Board {
         var result = Board(0, score: score)
         var board = self.board
@@ -106,7 +116,8 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         return result
     }
 
-    @inlinable
+    /// Inverts the board horizontally.
+    /// - Returns: The new, inverted board.
     func invert() -> Board {
         var result = Board(0, score: score)
         var board = self.board
@@ -123,6 +134,10 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
 
     // MARK: - Moves
 
+    /// Performs a move on the board.
+    /// - Note: Does not check if the move is 'valid'.
+    /// - Parameter move: The move to perform.
+    /// - Returns: The new board after the move.
     func move(_ move: Move) -> Board {
         switch move {
         case .left:
@@ -136,14 +151,18 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         }
     }
 
+    /// Performs the left move on the board.
+    /// - Returns: The new board after the move.
     func left() -> Board {
         invert().right().invert()
     }
 
+    /// Performs the right move on the board.
+    /// - Returns: The new board after the move.
     func right() -> Board {
         var result = Board(0, score: score)
         var rowValueBufferIndex = 0
-        let rowValues = UnsafeMutablePointer<Int>.allocate(capacity: 4)
+        let rowValues = UnsafeMutablePointer<Int>.allocate(capacity: 4) // Swift needs a fixed size array PLEASE
         var canMergeLast = false
         var board = self.board
         for row in UInt(0)..<4 {
@@ -178,14 +197,21 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         return result
     }
 
+    /// Performs the up move on the board.
+    /// - Returns: The new board after the move.
     func up() -> Board {
-        rotateCounterClockwise().left().rotateClockwise()
+        rotateClockwise().right().rotateCounterClockwise()
     }
 
+    /// Performs the down move on the board.
+    /// - Returns: The new board after the move.
     func down() -> Board {
-        rotateClockwise().left().rotateCounterClockwise()
+        rotateCounterClockwise().right().rotateClockwise()
     }
 
+    /// Finds all available moves for this board.
+    /// - Note: Avoid this function if possible, it's really slow.
+    /// - Returns: A set of available moves.
     func availableMoves() -> MoveSet {
         var moves = MoveSet()
         // Rotate around the clock to save time by reducing extra rotations.
@@ -214,7 +240,7 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
 
     // MARK: - Score
 
-    @inlinable
+    /// Finds the sum of the tiles on this board.
     func sum() -> Int {
         var result: UInt64 = 0
         var board = self.board
@@ -225,6 +251,8 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         return Int(result)
     }
 
+    /// Finds the indexes of all the tiles on this board.
+    /// - Returns: The empty tile indexes.
     func getEmpty() -> [Int] {
         var result: [Int] = []
         var board = self.board
@@ -239,6 +267,9 @@ struct Board: Hashable, Equatable, Sendable, CustomStringConvertible {
         return result
     }
 
+    /// Counts the number of empty tiles on the board.
+    /// - Note: Much faster than `Board.getEmpty().count`.
+    /// - Returns: The number of empty tiles.
     func countEmpty() -> Int {
         var board = self.board
         board |= (board >> 2) & 0x3333333333333333

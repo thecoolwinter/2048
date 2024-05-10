@@ -15,7 +15,7 @@ struct Game: ParsableCommand {
     @Flag(name: .customLong("no-human"), help: "Don't offer a human game (AI will play faster)")
     var noHuman: Bool = false
 
-    @Flag(name: .long, help: "Hide the nice GUI, print boards to the teriminal.")
+    @Flag(name: .long, help: "Hide the nice GUI, print boards to the terminal.")
     var hideGui: Bool = false
 
     @Flag(name: .shortAndLong, help: "Run a game and only output the final score.")
@@ -28,12 +28,21 @@ struct Game: ParsableCommand {
 
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     mutating func run() throws {
+        var algGame = State()
+        var humanGame = State()
+
+        let algBoardIndex = noHuman ? 0 : 1
+        var hasAlgGameEnded = false
+
+        var player = Expectimax(depthLimit: depthLimit)
+        var lastHumanMove: Move = .left
+
         if !weights.isEmpty {
-            guard weights.count == 10 else {
+            guard weights.count == 7 else {
                 print("Invalid weight count")
                 exit()
             }
-            Expectimax.weights = weights
+            player.weights = weights
         }
 
         if rawOut {
@@ -47,18 +56,6 @@ struct Game: ParsableCommand {
         setUpSignals() // Init signal handler
         initNCurses()  // Init ncurses
 
-        var algGame = State()
-        var humanGame = State()
-
-        let algBoardIndex = noHuman ? 0 : 1
-        var hasAlgGameEnded = false
-
-        var player = Expectimax(depthLimit: depthLimit)
-
-        var step = 0
-        var humanStep = 0
-        var lastHumanMove: Move = .left
-
         // Display the initial board(s)
 
         if !hideGui {
@@ -66,10 +63,10 @@ struct Game: ParsableCommand {
         }
         if !noHuman {
             prettyDisplayBoard(humanGame.currentBoard, boardOffset: 0)
-            displayBoardInfo(humanGame.currentBoard, step: step, action: .left, boardOffset: 0)
+            displayBoardInfo(humanGame.currentBoard, step: humanGame.step, action: .left, boardOffset: 0)
         }
         prettyDisplayBoard(algGame.currentBoard, boardOffset: algBoardIndex)
-        displayBoardInfo(algGame.currentBoard, step: step, action: .left, boardOffset: algBoardIndex)
+        displayBoardInfo(algGame.currentBoard, step: algGame.step, action: .left, boardOffset: algBoardIndex)
         if !hideGui {
             refresh()
         }
@@ -82,7 +79,6 @@ struct Game: ParsableCommand {
             var algMove: Move = .left
             var humanMove: Move?
             if !hasAlgGameEnded {
-                step += 1
                 algMove = player.chooseMove(game: algGame)
                 algGame.move(algMove)
             }
@@ -95,12 +91,12 @@ struct Game: ParsableCommand {
                 clear()
             }
             prettyDisplayBoard(algGame.currentBoard, boardOffset: algBoardIndex)
-            displayBoardInfo(algGame.currentBoard, step: step, action: algMove, boardOffset: algBoardIndex)
+            displayBoardInfo(algGame.currentBoard, step: algGame.step, action: algMove, boardOffset: algBoardIndex)
 
             if hasAlgGameEnded || algGame.terminalTest() {
                 displayBoardInfo(
                     algGame.currentBoard,
-                    step: step,
+                    step: algGame.step,
                     action: algMove,
                     isTerminal: true,
                     boardOffset: algBoardIndex
@@ -115,16 +111,15 @@ struct Game: ParsableCommand {
                 if let humanMove, humanGame.currentBoard.availableMoves().contains(humanMove) {
                     humanGame.move(humanMove)
                     lastHumanMove = humanMove
-                    humanStep += 1
                 }
 
                 prettyDisplayBoard(humanGame.currentBoard, boardOffset: 0)
-                displayBoardInfo(humanGame.currentBoard, step: humanStep, action: lastHumanMove, boardOffset: 0)
+                displayBoardInfo(humanGame.currentBoard, step: humanGame.step, action: lastHumanMove, boardOffset: 0)
 
                 if humanGame.terminalTest() {
                     displayBoardInfo(
                         humanGame.currentBoard,
-                        step: step,
+                        step: humanGame.step,
                         action: lastHumanMove,
                         isTerminal: true,
                         boardOffset: 0
@@ -210,6 +205,13 @@ struct Game: ParsableCommand {
 
         // Move line
         out("Move    : \(action)")
+        if !hideGui {
+            move(line, col)
+            line -= 1
+        }
+
+        // Step line
+        out("Eval    : \(Expectimax(depthLimit: depthLimit).eval(board))")
         if !hideGui {
             move(line, col)
             line -= 1

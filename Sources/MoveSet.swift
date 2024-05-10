@@ -1,3 +1,4 @@
+/// A set of moves stored in a single int, faster to allocate and use than a Swift array.
 struct MoveSet: Equatable, Hashable {
     var value: UInt8 = 0
 

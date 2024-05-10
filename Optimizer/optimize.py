@@ -7,14 +7,18 @@ def play_score(weights, idx):
     weight_str = ""
     for weight in weights:
         weight_str += f" {weight}"
-    game_out = subprocess.getoutput("./Game -d 3 -r --weights" + weight_str)
+    game_out = subprocess.getoutput("./Game -d 4 -r --weights" + weight_str)
+    if not game_out.isdigit():
+        print("Invalid output")
+        print(weights, game_out, idx)
+        exit(1)
     return (int(game_out), idx)
 
 
 if __name__ == "__main__":
-    with Pool(processes=4) as pool:
+    with Pool(processes=5) as pool:
         es = cma.CMAEvolutionStrategy(
-            [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0, 2.0], 3.0
+            [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 2.0], 0.5
         )
         while not es.stop():
             new_weight_matr = es.ask()

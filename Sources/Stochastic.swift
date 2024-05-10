@@ -1,3 +1,4 @@
+/// A single function for finding all the available random positions from a given board post-move.
 enum Stochastic {
     static func chances(_ board: Board) -> [Chance] {
         var result: [Chance] = []

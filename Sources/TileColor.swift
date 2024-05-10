@@ -4,6 +4,7 @@ import Glibc.ncurses
 import Darwin.ncurses
 #endif
 
+/// Calculates, stores, and uses colors for all the tiles in the 2048 game for use in the `ncurses` library.
 enum TileColor {
     static var colorIndex: Int16 = 2
     static var colorPairIndex: [Int: Int32] = [:]
