@@ -1,8 +1,12 @@
 # 2048 Solver
 
+>   Warning: WIP! I'm still writing this README and there's numerous bugs I'm sure.
+
 Hi! Welcome to my weekend project, a [2048](https://play2048.co/) solver written in Swift. 
 
 This project started as a final paper I turned in in December of 2023. The paper was written for an AI class (taught by the amazing [Dr. Andrew Exely](https://cse.umn.edu/cs/andrew-exley)), and explored the use of both the [Expectiminimax](https://en.wikipedia.org/wiki/Expectiminimax) and [Monte-Carlo Tree Search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search) to play the 2048 puzzle.
+
+>   All code in this repository is under the GPLv3 license, if you use any code please credit and share changes!
 
 <details>
 	<summary>⚠️ If you don't know what 2048 is ⚠️</summary>
